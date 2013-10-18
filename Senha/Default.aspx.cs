@@ -81,15 +81,16 @@ namespace Senha
         private void Sortear()
         {
             sorteadas.Clear();
-            //Random r = new Random();
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    sorteadas.Add(todasCores[r.Next(0, 5)]);
-            //}
-            sorteadas.Add(todasCores[0]);
-            sorteadas.Add(todasCores[1]);
-            sorteadas.Add(todasCores[2]);
-            sorteadas.Add(todasCores[3]);
+            Random r = new Random();
+            for (int i = 0; i < 4; i++)
+            {
+                sorteadas.Add(todasCores[r.Next(0, 5)]);
+            }
+            //Quando necessário testar para burlar o sorteio
+            //sorteadas.Add(todasCores[0]);
+            //sorteadas.Add(todasCores[1]);
+            //sorteadas.Add(todasCores[2]);
+            //sorteadas.Add(todasCores[3]);
             Session["sorteadas"] = sorteadas;
         }
 

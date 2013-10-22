@@ -15,6 +15,9 @@ namespace Senha
         String[] todasCores = new String[6];
         List<int> tentativa = new List<int>();
 
+        List<System.Web.UI.WebControls.Image> resultadoLinha = new List<System.Web.UI.WebControls.Image>();
+        List<System.Web.UI.WebControls.Image>[] todosResultados = new List<System.Web.UI.WebControls.Image>[10];
+
         int linhaCount = 1; //Indica em qual linha estou atuando.
         int posicaoCount = 1; //Indica em qual imagem eu estou definindo a cor, matriz 4 colunas por 10 linhas.
         int jogadas = 0;
@@ -45,53 +48,30 @@ namespace Senha
                 Session["tentativa"] = tentativa;
                 Session["jogadas"] = jogadas;
                 Sortear();
+                Session["todosResultados"] = todosResultados;
             }
             else
             {
                 linhaCount = int.Parse(Session["linhaCount"].ToString());
                 posicaoCount = int.Parse(Session["posicaoCount"].ToString());
                 sorteadas = (List<String>)Session["sorteadas"];
+                todosResultados = (List<System.Web.UI.WebControls.Image>[])Session["todosResultados"];
             }
-        }
-
-        protected void btnNovoJogo_Click(object sender, EventArgs e)
-        {
-            LimparCores();
-            Button btnVerificar = (Button)FindControl("btnVerificar");
-            btnVerificar.Enabled = false;
-            // Reseta valores
-            linhaCount = 1;
-            posicaoCount = 1;
-            Session["linhaCount"] = linhaCount;
-            Session["posicaoCount"] = posicaoCount;
-            Session["jogadas"] = 0;
             
-            Sortear();
-        }
-
-        private void LimparCores()
-        {
-            for (int i = 1; i <= 40; i++)
+            //Cada linha
+            for (int i = 0; i < todosResultados.Length; i++)
             {
-                ImageButton ib = (ImageButton)FindControl("ib" + i.ToString());
-                ib.ImageUrl = "./img/empty.png";
+                PlaceHolder ph = (PlaceHolder)FindControl("ph" + (i+1).ToString());
+                //Cada elemento na linha
+                List<System.Web.UI.WebControls.Image> img = todosResultados[i];
+                if (img != null)
+                {
+                    for (int j = 0; j < img.Count; j++)
+                    {
+                        ph.Controls.Add(img[j]);
+                    }
+                }
             }
-        }
-
-        private void Sortear()
-        {
-            sorteadas.Clear();
-            Random r = new Random();
-            for (int i = 0; i < 4; i++)
-            {
-                sorteadas.Add(todasCores[r.Next(0, 5)]);
-            }
-            //Quando necessário testar para burlar o sorteio
-            //sorteadas.Add(todasCores[0]);
-            //sorteadas.Add(todasCores[1]);
-            //sorteadas.Add(todasCores[2]);
-            //sorteadas.Add(todasCores[3]);
-            Session["sorteadas"] = sorteadas;
         }
 
         protected void ImageButton_Click(object sender, ImageClickEventArgs e)
@@ -139,12 +119,13 @@ namespace Senha
             {
                 ImageButton ib = (ImageButton)FindControl("ib" + i.ToString());
 
-                //se tem uma cor na posicao certa
+                //Se tem uma cor certa na posicao certa
                 if (sorteadas.ElementAt(posicaoTentativa) == ib.ImageUrl)
                 {
                     System.Web.UI.WebControls.Image imgAcerto = new System.Web.UI.WebControls.Image();
                     imgAcerto.ImageUrl = "./img/result-black.png";
                     ph.Controls.Add(imgAcerto);
+                    resultadoLinha.Add(imgAcerto);
                     copiaSorteadas[posicaoTentativa] = "";
                     posicoesCorretas++;
                 }
@@ -156,17 +137,21 @@ namespace Senha
             {
                 ImageButton ib = (ImageButton)FindControl("ib" + i.ToString());
 
-                //se tem uma cor certa na posicao errada
+                //Se tem uma cor certa na posicao errada
                 if (copiaSorteadas.Contains(ib.ImageUrl))
                 {
                     System.Web.UI.WebControls.Image imgAcerto = new System.Web.UI.WebControls.Image();
                     imgAcerto.ImageUrl = "./img/result-white.png";
                     ph.Controls.Add(imgAcerto);
+                    resultadoLinha.Add(imgAcerto);
                 }
                 posicaoTentativa--;
             }
 
-            //Se acertou as quatro posições
+            todosResultados[jogadas - 1] = resultadoLinha;
+            Session["todosResultados"] = todosResultados;
+
+            //Se acertou as quatro posições ou se chegou nas 10 jogadas e acertou menos de 4 posições
             if ((posicoesCorretas == 4) || (jogadas == 10 & posicoesCorretas < 4))
             {
                 PlaceHolder phRes = (PlaceHolder)FindControl("phResultado");
@@ -202,6 +187,60 @@ namespace Senha
             }
             Button btnVerificar = (Button)FindControl("btnVerificar");
             btnVerificar.Enabled = false;
+        }
+
+        private void Sortear()
+        {
+            sorteadas.Clear();
+            //Random r = new Random();
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    sorteadas.Add(todasCores[r.Next(0, 5)]);
+            //}
+            //Quando necessário testar para burlar o sorteio
+            sorteadas.Add(todasCores[0]);
+            sorteadas.Add(todasCores[1]);
+            sorteadas.Add(todasCores[2]);
+            sorteadas.Add(todasCores[3]);
+            Session["sorteadas"] = sorteadas;
+        }
+
+        protected void btnNovoJogo_Click(object sender, EventArgs e)
+        {
+            LimparCores();
+            Button btnVerificar = (Button)FindControl("btnVerificar");
+            btnVerificar.Enabled = false;
+            // Reseta valores
+            linhaCount = 1;
+            posicaoCount = 1;
+            Session["linhaCount"] = linhaCount;
+            Session["posicaoCount"] = posicaoCount;
+            Session["jogadas"] = 0;
+            Sortear();
+
+            //Cada linha limpo as posições da sessão.
+            for (int i = 0; i < todosResultados.Length; i++)
+            {
+                todosResultados[i] = null;
+            }
+            //Salvando tudo limpo na sessão.
+            Session["todosResultados"] = todosResultados;
+
+            //Cada linha limpo os placeholders também, pois a alimentação dos mesmo ocorreu no onLoad que ocorre antes deste método.
+            for (int i = 0; i < todosResultados.Length; i++)
+            {
+                PlaceHolder ph = (PlaceHolder)FindControl("ph" + (i + 1).ToString());
+                ph.Controls.Clear();
+            }
+        }
+
+        private void LimparCores()
+        {
+            for (int i = 1; i <= 40; i++)
+            {
+                ImageButton ib = (ImageButton)FindControl("ib" + i.ToString());
+                ib.ImageUrl = "./img/empty.png";
+            }
         }
 
         private List<String> CriarCopiaSorteio()
